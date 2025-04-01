@@ -4,3 +4,6 @@ run:
 
 build:
 	go build main.go
+
+air:
+	air -c .air.toml
