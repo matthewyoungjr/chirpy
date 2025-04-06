@@ -23,16 +23,16 @@ func main() {
 
 	mux.Handle("/app/", config.MetricsMiddleWare(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
 
-	mux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /api/metrics", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		count := fmt.Sprintf("Hits: %d", config.serverHits.Load())
 		fmt.Println(count)
 		w.Write([]byte(count))
 	})
 
-	mux.Handle("/reset", config.Reset())
+	mux.Handle("POST /api/reset", config.Reset())
 
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /api/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "OK %d", http.StatusOK)
