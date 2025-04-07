@@ -11,3 +11,7 @@ type Error struct {
 type Valid struct {
 	Valid bool `json:"valid"`
 }
+
+type Cleaned struct {
+	CleanedBody string `json:"cleaned_body"`
+}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"sync/atomic"
 )
 
@@ -66,8 +67,27 @@ func main() {
 			return
 		}
 
-		response := Valid{Valid: true}
+		profane := []string{"kerfuffle", "sharbert", "fornax"}
+		cleaned := requestBody.Body
+		wasCleaned := false
+
+		for _, p := range profane {
+			if strings.Contains(cleaned, p) {
+				cleaned = strings.ReplaceAll(cleaned, p, "****")
+				wasCleaned = true
+			}
+		}
+
 		w.Header().Set("Content-Type", "application/json")
+
+		if wasCleaned {
+			newBody := Cleaned{CleanedBody: cleaned}
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(newBody)
+			return
+		}
+
+		response := Valid{Valid: true}
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(&response)
 
