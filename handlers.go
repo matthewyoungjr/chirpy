@@ -12,6 +12,8 @@ type apiConfig struct {
 	serverHits atomic.Int32
 }
 
+var config apiConfig
+
 func ValidateChirp(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		errmsg := Error{Error: "Method not allowed !"}
@@ -62,6 +64,20 @@ func Healthz(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "OK %d", http.StatusOK)
+}
+
+func GetMetrics(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(fmt.Sprintf(`
+		<html>
+
+			<body>
+			<h1>Welcome, Chirpy Admin</h1>
+			<p>Chirpy has been visited %d times!</p>
+			</body>
+
+		</html>
+`, config.serverHits.Load())))
 }
 
 func (a *apiConfig) MetricsMiddleWare(next http.Handler) http.Handler {
