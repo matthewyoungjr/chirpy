@@ -15,3 +15,7 @@ type Valid struct {
 type Cleaned struct {
 	CleanedBody string `json:"cleaned_body"`
 }
+
+type User struct {
+	Email string `json:"email"`
+}

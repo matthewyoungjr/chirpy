@@ -3,16 +3,18 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"sync/atomic"
+
+	"github.com/matthewyoungjr/chirpy/internal/database"
 )
 
 type apiConfig struct {
 	serverHits atomic.Int32
+	DB         *database.Queries
 }
-
-var config apiConfig
 
 func ValidateChirp(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -93,5 +95,31 @@ func (a *apiConfig) Reset() http.Handler {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Count has been reset successfully."))
 	})
+
+}
+
+func CreateUser(w http.ResponseWriter, r *http.Request) {
+	log.Println("Request received")
+	var email User
+
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&email); err != nil {
+		log.Println("Error decoding body:", err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	log.Println("Creating user with email:", email.Email)
+	user, err := config.DB.CreateUser(r.Context(), email.Email)
+
+	if err != nil {
+		log.Printf("Error : %v", err)
+		http.Error(w, "Could not create user", http.StatusBadRequest)
+		return
+	}
+
+	log.Println("User created:", user)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(&user)
 
 }

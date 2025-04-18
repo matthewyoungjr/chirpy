@@ -1,11 +1,33 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
+	"os"
+
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
+	"github.com/matthewyoungjr/chirpy/internal/database"
 )
 
+var config *apiConfig
+
 func main() {
+	godotenv.Load()
+	dbURL := os.Getenv("DB_URL")
+
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatal("cannot connect to db:", err)
+	}
+
+	dbQueries := database.New(db)
+
+	config = &apiConfig{
+		DB: dbQueries,
+	}
+
 	mux := http.NewServeMux()
 
 	server := &http.Server{
@@ -22,6 +44,8 @@ func main() {
 	mux.HandleFunc("GET /api/healthz", Healthz)
 
 	mux.HandleFunc("/api/validate_chirp", ValidateChirp)
+
+	mux.HandleFunc("POST /api/users", CreateUser)
 
 	log.Fatal(server.ListenAndServe())
 
