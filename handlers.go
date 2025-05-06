@@ -109,6 +109,11 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !strings.Contains(email.Email, "@") {
+		http.Error(w, "Invalid email format", http.StatusBadRequest)
+		return
+	}
+
 	log.Println("Creating user with email:", email.Email)
 	user, err := config.DB.CreateUser(r.Context(), email.Email)
 
