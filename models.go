@@ -19,3 +19,8 @@ type Cleaned struct {
 type User struct {
 	Email string `json:"email"`
 }
+
+type CreateChirpParam struct {
+	Body   string `json:"body"`
+	UserID string `json:"user_id"`
+}

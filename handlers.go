@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync/atomic"
 
+	"github.com/google/uuid"
 	"github.com/matthewyoungjr/chirpy/internal/database"
 )
 
@@ -127,4 +128,39 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(&user)
 
+}
+
+func CreateChirp(w http.ResponseWriter, r *http.Request) {
+	var request CreateChirpParam
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	if len(request.Body) > 140 {
+		http.Error(w, "Chirp is too long", http.StatusBadRequest)
+		return
+	}
+
+	profane := []string{"kerfuffle", "sharbert", "fornax"}
+	cleaned := request.Body
+
+	for _, bad := range profane {
+		cleaned = strings.ReplaceAll(cleaned, bad, "****")
+	}
+
+	chirp, err := config.DB.CreateChirp(r.Context(), database.CreateChirpParams{
+		Body:   cleaned,
+		UserID: uuid.MustParse(request.UserID),
+	})
+
+	if err != nil {
+		log.Printf("Err : %v", err)
+		http.Error(w, "could not create chirp", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(chirp)
 }
