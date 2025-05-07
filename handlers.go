@@ -164,3 +164,15 @@ func CreateChirp(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(chirp)
 }
+
+func GetChirps(w http.ResponseWriter, r *http.Request) {
+	chirps, err := config.DB.GetChirps(r.Context())
+	if err != nil {
+		http.Error(w, "Could not retrieve chirps", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(chirps)
+}
