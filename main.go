@@ -42,7 +42,7 @@ func main() {
 	mux.HandleFunc("/api/validate_chirp", ValidateChirp)
 	mux.HandleFunc("POST /api/users", CreateUser)
 	mux.HandleFunc("GET /api/chirps", GetChirps)
-	// mux.HandleFunc("GET /api/chirps/{id}", GetChirp)
+	mux.HandleFunc("GET /api/chirps/{id}", GetChirp)
 	mux.HandleFunc("POST /api/chirps", CreateChirp)
 
 	log.Fatal(server.ListenAndServe())
