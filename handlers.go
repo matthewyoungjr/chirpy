@@ -132,18 +132,18 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	log.Println("Creating user with email:", u.Email)
 	user, err := config.DB.CreateUser(r.Context(), params)
 
+	if err != nil {
+		log.Printf("Error : %v", err)
+		http.Error(w, "Could not create user", http.StatusBadRequest)
+		return
+	}
+
 	response := struct {
 		ID    uuid.UUID
 		Email string
 	}{
 		ID:    user.ID,
 		Email: user.Email,
-	}
-
-	if err != nil {
-		log.Printf("Error : %v", err)
-		http.Error(w, "Could not create user", http.StatusBadRequest)
-		return
 	}
 
 	log.Println("User created:", user)
