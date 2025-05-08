@@ -11,6 +11,7 @@ import (
 	"sync/atomic"
 
 	"github.com/google/uuid"
+	"github.com/matthewyoungjr/chirpy/internal/auth"
 	"github.com/matthewyoungjr/chirpy/internal/database"
 )
 
@@ -103,22 +104,41 @@ func (a *apiConfig) Reset() http.Handler {
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	log.Println("Request received")
-	var email User
+	var u UserParams
 
 	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&email); err != nil {
+	if err := decoder.Decode(&u); err != nil {
 		log.Println("Error decoding body:", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	if !strings.Contains(email.Email, "@") {
+	if !strings.Contains(u.Email, "@") {
 		http.Error(w, "Invalid email format", http.StatusBadRequest)
 		return
 	}
 
-	log.Println("Creating user with email:", email.Email)
-	user, err := config.DB.CreateUser(r.Context(), email.Email)
+	hash, err := auth.HashPassword(u.Password)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		return
+	}
+
+	params := database.CreateUserParams{
+		Email:          u.Email,
+		HashedPassword: hash,
+	}
+
+	log.Println("Creating user with email:", u.Email)
+	user, err := config.DB.CreateUser(r.Context(), params)
+
+	response := struct {
+		ID    uuid.UUID
+		Email string
+	}{
+		ID:    user.ID,
+		Email: user.Email,
+	}
 
 	if err != nil {
 		log.Printf("Error : %v", err)
@@ -128,7 +148,8 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	log.Println("User created:", user)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(&user)
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(&response)
 
 }
 

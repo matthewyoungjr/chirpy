@@ -16,8 +16,9 @@ type Cleaned struct {
 	CleanedBody string `json:"cleaned_body"`
 }
 
-type User struct {
-	Email string `json:"email"`
+type UserParams struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type CreateChirpParam struct {
