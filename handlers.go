@@ -230,6 +230,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&u)
 	if err != nil {
 		log.Printf("Couldn't decode json : %v", err)
+		return
 	}
 
 	if !strings.Contains(u.Email, "@") {
