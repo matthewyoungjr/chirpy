@@ -113,6 +113,11 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(u.Email) < 4 {
+		http.Error(w, "Email address is too short", http.StatusBadRequest)
+		return
+	}
+
 	if !strings.Contains(u.Email, "@") {
 		http.Error(w, "Invalid email format", http.StatusBadRequest)
 		return
@@ -233,7 +238,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !strings.Contains(u.Email, "@") {
+	if !strings.Contains(u.Email, "@") || !strings.Contains(u.Email, ".") {
 		http.Error(w, "Invalid email", http.StatusBadRequest)
 		return
 	}
