@@ -222,3 +222,45 @@ func GetChirp(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(chirp)
 }
+
+func Login(w http.ResponseWriter, r *http.Request) {
+	var u UserParams
+
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&u)
+	if err != nil {
+		log.Printf("Couldn't decode json : %v", err)
+	}
+
+	if !strings.Contains(u.Email, "@") {
+		http.Error(w, "Invalid email", http.StatusBadRequest)
+		return
+	}
+
+	user, err := config.DB.GetUserByEmail(r.Context(), u.Email)
+	if err != nil {
+		log.Printf("User lookup failed: %v", err)
+		http.Error(w, "Incorrect email or password", http.StatusUnauthorized)
+		return
+	}
+
+	if err = auth.CheckPasswordHash(user.HashedPassword, u.Password); err != nil {
+		log.Printf("Password mismatch : %v", err)
+		http.Error(w, "Incorrect email or password", http.StatusUnauthorized)
+		return
+	}
+
+	response := struct {
+		ID    uuid.UUID `json:"id"`
+		Email string    `json:"email"`
+	}{
+		ID:    user.ID,
+		Email: user.Email,
+	}
+
+	log.Println("User logged in:", user.Email)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+
+}
