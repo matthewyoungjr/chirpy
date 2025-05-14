@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/matthewyoungjr/chirpy/internal/auth"
@@ -18,6 +19,7 @@ import (
 type apiConfig struct {
 	serverHits atomic.Int32
 	DB         *database.Queries
+	JWTSecret  string
 }
 
 func ValidateChirp(w http.ResponseWriter, r *http.Request) {
@@ -256,12 +258,29 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Expiration logic
+	expiry := time.Hour // default
+	if u.ExpiresInSeconds > 0 {
+		if u.ExpiresInSeconds < 3600 {
+			expiry = time.Duration(u.ExpiresInSeconds) * time.Second
+		}
+	}
+
+	token, err := auth.MakeJWT(user.ID, config.JWTSecret, expiry)
+	if err != nil {
+		log.Printf("Failed to generate token: %v", err)
+		http.Error(w, "Could not generate token", http.StatusInternalServerError)
+		return
+	}
+
 	response := struct {
 		ID    uuid.UUID `json:"id"`
 		Email string    `json:"email"`
+		Token string
 	}{
 		ID:    user.ID,
 		Email: user.Email,
+		Token: token,
 	}
 
 	log.Println("User logged in:", user.Email)
