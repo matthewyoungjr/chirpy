@@ -162,6 +162,17 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 func CreateChirp(w http.ResponseWriter, r *http.Request) {
 	var request CreateChirpParam
+	tokenStr, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		http.Error(w, "Unauthorized: "+err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	userID, err := auth.ValidateJWT(tokenStr, config.JWTSecret)
+	if err != nil {
+		http.Error(w, "Unauthorized: "+err.Error(), http.StatusUnauthorized)
+		return
+	}
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -182,7 +193,7 @@ func CreateChirp(w http.ResponseWriter, r *http.Request) {
 
 	chirp, err := config.DB.CreateChirp(r.Context(), database.CreateChirpParams{
 		Body:   cleaned,
-		UserID: uuid.MustParse(request.UserID),
+		UserID: userID,
 	})
 
 	if err != nil {
@@ -192,6 +203,7 @@ func CreateChirp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(chirp)
 }
 
