@@ -1,6 +1,10 @@
 package auth
 
 import (
+	"errors"
+	"fmt"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -32,4 +36,58 @@ func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (str
 	})
 
 	return token.SignedString(tokenSecret)
+}
+
+func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
+
+	claims := &jwt.RegisteredClaims{}
+
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+
+		return []byte(tokenSecret), nil
+	})
+
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("failed to parse or validate token: %w", err)
+	}
+
+	if !token.Valid {
+		return uuid.Nil, fmt.Errorf("invalid token")
+	}
+
+	userID, err := uuid.Parse(claims.Subject)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("invalid user ID in token: %w", err)
+	}
+
+	return userID, nil
+}
+
+func GetBearerToken(header http.Header) (string, error) {
+	authHeaders, ok := header["Authorization"]
+	if !ok {
+		return "", errors.New("missing Authorization header")
+	}
+
+	if len(authHeaders) == 0 {
+		return "", errors.New("empty Authorization header")
+	}
+
+	authHeader := authHeaders[0]
+
+	const bearerPrefix = "Bearer "
+	if !strings.HasPrefix(authHeader, bearerPrefix) {
+		return "", errors.New("authorization header must start with 'Bearer '")
+	}
+
+	token := strings.TrimSpace(strings.TrimPrefix(authHeader, bearerPrefix))
+	if token == "" {
+		return "", errors.New("token is empty after stripping Bearer prefix")
+	}
+
+	return token, nil
 }
